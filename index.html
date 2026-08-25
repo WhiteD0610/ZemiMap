@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#F9F9F9" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1E1E20" media="(prefers-color-scheme: dark)">
-<title>旅行地図</title>
+<title>さんぽ地図</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 /* ===== iOS風トークン ===== */
@@ -355,6 +355,31 @@ svg.ic{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke
 .grow input::placeholder,.grow textarea::placeholder{color:var(--label3)}
 .grow .seg{margin:0;width:100%}
 
+/* 予定えらびの行 */
+.pickrow{
+  display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;
+  font:inherit;color:var(--label);text-align:left;
+  padding:11px 14px;border-bottom:.5px solid var(--sep-soft);
+}
+.pickrow:last-child{border-bottom:none}
+.pickrow .sw{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.pickrow .nm{flex:1;min-width:0;font-size:16px;font-weight:600;overflow-wrap:anywhere}
+.pickrow .meta{font-size:12px;color:var(--label2);font-weight:400;display:block;margin-top:1px}
+.pickempty{padding:14px;font-size:14px;color:var(--label2)}
+
+/* リストからの追加ボタン */
+.addrow{
+  display:flex;align-items:center;gap:8px;width:100%;border:none;
+  background:var(--card);border-radius:12px;margin-top:2px;
+  padding:12px 13px;font:inherit;font-size:15px;font-weight:600;color:var(--tint);
+}
+.addrow .ic{width:18px;height:18px}
+.noloc{
+  display:inline-flex;align-items:center;gap:4px;margin-top:6px;
+  font-size:11.5px;font-weight:600;color:var(--orange);
+}
+.noloc .ic{width:12px;height:12px;stroke-width:2.4}
+
 /* ボタン */
 .actions{display:flex;flex-direction:column;gap:10px;margin-top:18px}
 .btn{
@@ -436,7 +461,7 @@ svg.ic{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke
 
 <div class="nav" id="nav">
   <div class="nav-top">
-    <div class="nav-title">旅行地図</div>
+    <div class="nav-title">さんぽ地図</div>
     <button class="role-pill" id="rolePill" type="button"></button>
     <button class="nav-btn" id="searchToggle" type="button" aria-label="場所を検索"></button>
     <button class="nav-btn" id="viewToggle" type="button" aria-label="リストと地図を切り替え"></button>
@@ -473,6 +498,7 @@ svg.ic{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke
     <p class="detail-memo" id="detailMemo"></p>
     <div class="group" id="detailInfo"></div>
     <div class="actions" id="detailActions">
+      <button class="btn tinted" id="locBtn" type="button">地図で場所を決める</button>
       <div class="btnrow">
         <button class="btn tinted" id="editBtn" type="button">編集</button>
         <button class="btn destructive" id="deleteBtn" type="button">削除</button>
@@ -511,6 +537,15 @@ svg.ic{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke
       </div>
     </div>
     <div class="group" id="timeRows"></div>
+    <div class="group" id="locRow" style="display:none">
+      <div class="grow"><span class="k">場所</span><span class="v" style="color:var(--label2)">未設定</span></div>
+      <div class="grow" style="padding:0">
+        <button class="btn tinted" id="setLocBtn" type="button"
+          style="width:100%;border-radius:0;background:none;justify-content:flex-start;padding:12px 14px">
+          保存してから地図で位置を指定できます
+        </button>
+      </div>
+    </div>
 
     <div class="grouplabel">詳細</div>
     <div class="group">
@@ -540,11 +575,27 @@ svg.ic{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke
 <!-- 合言葉 -->
 <div class="gate" id="gate">
   <div class="mark" id="gateMark"></div>
-  <h1>旅行地図</h1>
+  <h1>さんぽ地図</h1>
   <p>合言葉を入力してください</p>
   <input type="password" id="gateInput" placeholder="合言葉" autocomplete="current-password">
   <button class="btn filled" id="gateBtn" type="button">開く</button>
   <p class="msg" id="gateMsg"></p>
+</div>
+
+<!-- 地図をタップしたときの割り当て先えらび -->
+<div class="sheet" id="pickSheet">
+  <div class="grabber"></div>
+  <div class="sheet-inner">
+    <h2>この場所はどの予定？</h2>
+    <p style="font-size:14px;color:var(--label2);margin-top:6px">
+      場所がまだ決まっていない予定に割り当てるか、新しく作れます。
+    </p>
+    <div class="group" id="pickList"></div>
+    <div class="actions">
+      <button class="btn filled" id="pickNewBtn" type="button">新しい予定として作る</button>
+      <button class="btn tinted" id="pickCancelBtn" type="button">キャンセル</button>
+    </div>
+  </div>
 </div>
 
 <div class="lightbox" id="lightbox"><img id="lightboxImg" alt="拡大した写真"></div>
@@ -554,7 +605,7 @@ svg.ic{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke
 <script>
 /* ===================== 設定 ===================== */
 // GASをウェブアプリとしてデプロイして得た /exec URL に書き換える
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyPUfaGSUc5gaih5HYlyZQz2cTkM9zO4PvF6XdhQikL9Fz7FVqMzkn-smgOMgTD1oer/exec";
+const GAS_URL = "ここにGASのURLを貼る";
 
 const DAY_COUNT = 3;
 // 分類ごとに、入力する時刻の欄と表示のしかたを決める
@@ -611,6 +662,7 @@ let markers = {};
 let currentPin = null;
 let placing = false, tempMarker = null;
 let editing = null, formLatLng = null;
+let awaitingPin = null; // 「この予定の場所を地図で決める」待ち
 let keepPhotoIds = [], newPhotos = [];
 let formCat = "観光", formDay = 0;
 let formTimes = {}, formMove = "";
@@ -692,6 +744,11 @@ function byTime(a, b) {
 }
 
 /* ===================== 班 ===================== */
+function hasLoc(p) {
+  return typeof p.lat === "number" && isFinite(p.lat) &&
+         typeof p.lng === "number" && isFinite(p.lng);
+}
+function noLocPins() { return pins.filter(p => !hasLoc(p)); }
 function dayPins(d) { return pins.filter(p => p.day === d).sort(byTime); }
 // その日に登場する班名を、最初に出てくる時刻の順で返す
 function groupsOf(d) {
@@ -774,11 +831,12 @@ function buildGroupChips() {
 }
 
 function fitDay(d) {
-  const list = dayPins(d);
-  if (!list.length) { toast(d + "日目の予定はまだありません"); return; }
+  const list = dayPins(d).filter(hasLoc);
+  if (!list.length) return;
   fitTrack(list);
 }
 function fitTrack(list) {
+  list = list.filter(hasLoc);
   if (!list.length) return;
   if (list.length === 1) map.setView([list[0].lat, list[0].lng], Math.max(map.getZoom(), 15));
   else map.fitBounds(L.latLngBounds(list.map(p => [p.lat, p.lng])).pad(0.25));
@@ -797,7 +855,7 @@ function renderMap() {
 
   if (viewDay === 0) {
     // 全日程: 種類ごとの色。順番の線は引かない
-    pins.forEach(p => addMarker(p, typeColor(p), null));
+    pins.filter(hasLoc).forEach(p => addMarker(p, typeColor(p), null));
     return;
   }
 
@@ -805,7 +863,7 @@ function renderMap() {
 
   if (viewGroup) {
     // 1つの班にしぼる = ひと続きの道のりなので番号を振る
-    const track = trackOf(viewDay, viewGroup);
+    const track = trackOf(viewDay, viewGroup).filter(hasLoc);
     drawRoute(track, groupColor(viewGroup));
     track.forEach((p, i) => addMarker(p, p.group ? groupColor(p.group) : cssVar("tint"), i + 1));
     return;
@@ -813,15 +871,15 @@ function renderMap() {
 
   if (!groups.length) {
     // 班分けなし = 全員同じ道のり
-    const track = dayPins(viewDay);
+    const track = dayPins(viewDay).filter(hasLoc);
     drawRoute(track, cssVar("tint"));
     track.forEach((p, i) => addMarker(p, cssVar("tint"), i + 1));
     return;
   }
 
   // 全班同時表示: 班ごとに線を引く。順番が1本に定まらないので番号は出さない
-  groups.forEach(g => drawRoute(trackOf(viewDay, g), groupColor(g)));
-  dayPins(viewDay).forEach(p => {
+  groups.forEach(g => drawRoute(trackOf(viewDay, g).filter(hasLoc), groupColor(g)));
+  dayPins(viewDay).filter(hasLoc).forEach(p => {
     addMarker(p, p.group ? groupColor(p.group) : cssVar("tint"), null);
   });
 }
@@ -892,6 +950,7 @@ function daySection(d, thumbs) {
     p.className = "empty";
     p.textContent = "まだ予定がありません";
     sec.appendChild(p);
+    if (role === "editor") sec.appendChild(addRow(d));
     return sec;
   }
 
@@ -913,9 +972,24 @@ function daySection(d, thumbs) {
   }
   sec.appendChild(body);
 
+  if (role === "editor") sec.appendChild(addRow(d));
   const total = totalsOf(list);
   if (total) sec.appendChild(total);
   return sec;
+}
+
+// その日に予定を足すボタン。日と班を引き継いでフォームを開く
+function addRow(d) {
+  const wrap = document.createElement("div");
+  wrap.className = "tl";
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "addrow";
+  b.innerHTML = icon("plus") + "<span>" + d + "日目に予定を追加</span>";
+  b.style.marginLeft = "30px";
+  b.onclick = () => openForm(null, null, d);
+  wrap.appendChild(b);
+  return wrap;
 }
 
 function plainSection(title, list, thumbs) {
@@ -1084,6 +1158,12 @@ function itemRow(pin, color, thumbs, compact) {
     m.className = "card-memo";
     m.textContent = pin.memo;
     main.appendChild(m);
+  }
+  if (!hasLoc(pin)) {
+    const w = document.createElement("div");
+    w.className = "noloc";
+    w.innerHTML = icon("pin") + "<span>場所は未設定</span>";
+    main.appendChild(w);
   }
   if (pin.price != null && pin.price !== "") main.appendChild(priceRow(pin));
 
@@ -1256,10 +1336,28 @@ function openDetail(id) {
   strip.style.display = pin.photoIds.length ? "flex" : "none";
   fillPhotos(imgs);
 
+  const locBtn = document.getElementById("locBtn");
+  locBtn.textContent = hasLoc(pin) ? "地図で場所を変える" : "地図で場所を決める";
+
   resetDelete();
   showSheet(detailSheet);
-  map.panTo([pin.lat, pin.lng]);
+  if (hasLoc(pin)) map.panTo([pin.lat, pin.lng]);
 }
+
+// 詳細から「場所を決める」= 地図に切り替えてタップ待ちにする
+document.getElementById("locBtn").addEventListener("click", () => {
+  const pin = currentPin;
+  if (!pin) return;
+  closeSheets();
+  closeList();
+  awaitingPin = pin;
+  placing = true;
+  setIcon(addBtn, "close");
+  addBtn.classList.add("cancel");
+  banner.textContent = pin.name + " の場所を地図でタップ";
+  banner.style.display = "block";
+  if (hasLoc(pin)) map.panTo([pin.lat, pin.lng]);
+});
 
 function tag(text, color) {
   const t = document.createElement("span");
@@ -1331,33 +1429,54 @@ const addBtn = document.getElementById("addBtn");
 const banner = document.getElementById("banner");
 
 addBtn.addEventListener("click", () => {
+  if (listOpen) {
+    // リストからは位置なしで予定を作る（場所はあとで地図で決められる）
+    openForm(null, null);
+    return;
+  }
   if (placing) { stopPlacing(); return; }
   placing = true;
   setIcon(addBtn, "close");
   addBtn.classList.add("cancel");
+  banner.textContent = noLocPins().length
+    ? "地図をタップ（場所待ちの予定 " + noLocPins().length + "件）"
+    : "地図をタップして場所を指定";
   banner.style.display = "block";
   closeSheets();
 });
 function stopPlacing() {
   placing = false;
+  awaitingPin = null;
   setIcon(addBtn, "plus");
   addBtn.classList.remove("cancel");
   banner.style.display = "none";
   if (tempMarker) { map.removeLayer(tempMarker); tempMarker = null; }
 }
-map.on("click", e => { if (placing) openForm(null, e.latlng); });
+map.on("click", e => {
+  if (!placing) return;
+  if (awaitingPin) {                       // 特定の予定の場所を決めている最中
+    const target = awaitingPin;
+    awaitingPin = null;
+    assignLocation(target, e.latlng);
+    return;
+  }
+  const waiting = noLocPins();
+  if (waiting.length) openPicker(e.latlng, waiting);
+  else openForm(null, e.latlng);
+});
 map.on("contextmenu", e => {
   if (role !== "editor" || formSheet.classList.contains("open")) return;
   openForm(null, e.latlng);
 });
 
-function openForm(pin, latlng) {
+function openForm(pin, latlng, presetDay) {
   editing = pin;
-  formLatLng = pin ? { lat: pin.lat, lng: pin.lng } : latlng;
+  // 座標は「あれば使う」。リストから作った予定は位置なしで始まる
+  formLatLng = latlng || (pin && hasLoc(pin) ? { lat: pin.lat, lng: pin.lng } : null);
   keepPhotoIds = pin ? pin.photoIds.slice() : [];
   newPhotos = [];
   formCat = pin ? typeOf(pin) : "観光";
-  formDay = pin ? (pin.day || 0) : viewDay;
+  formDay = pin ? (pin.day || 0) : (presetDay != null ? presetDay : viewDay);
 
   formTimes = {
     time: pin ? (pin.time || "") : "",
@@ -1379,13 +1498,83 @@ function openForm(pin, latlng) {
   buildDaySegForm();
   renderPhotoEdit();
 
-  if (tempMarker) map.removeLayer(tempMarker);
-  tempMarker = L.marker([formLatLng.lat, formLatLng.lng], {
-    icon: pinIcon(cssVar(TYPES[formCat].token))
-  }).addTo(map);
+  if (tempMarker) { map.removeLayer(tempMarker); tempMarker = null; }
+  if (formLatLng) {
+    tempMarker = L.marker([formLatLng.lat, formLatLng.lng], {
+      icon: pinIcon(cssVar(TYPES[formCat].token))
+    }).addTo(map);
+  }
+  document.getElementById("locRow").style.display = formLatLng ? "none" : "";
 
   showSheet(formSheet);
 }
+
+/* 地図をタップした位置を、どの予定に割り当てるか選ぶ */
+const pickSheet = document.getElementById("pickSheet");
+let pickLatLng = null;
+
+function openPicker(latlng, waiting) {
+  pickLatLng = latlng;
+  const box = document.getElementById("pickList");
+  box.innerHTML = "";
+  waiting
+    .slice()
+    .sort((a, b) => (a.day || 99) - (b.day || 99) || byTime(a, b))
+    .forEach(pin => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "pickrow";
+      const t = TYPES[typeOf(pin)];
+      const meta = [pin.day ? pin.day + "日目" : "日程未定", typeOf(pin)];
+      if (pin.group) meta.push(pin.group);
+      if (pin[t.times[0][0]]) meta.push(t.times[0][1] + " " + pin[t.times[0][0]]);
+      b.innerHTML = '<span class="sw" style="background:' + typeColor(pin) + '"></span>' +
+        '<span class="nm">' + escapeHtml(pin.name) +
+        '<span class="meta">' + escapeHtml(meta.join(" · ")) + "</span></span>";
+      b.onclick = () => assignLocation(pin, pickLatLng);
+      box.appendChild(b);
+    });
+  if (!box.children.length) {
+    box.innerHTML = '<p class="pickempty">場所待ちの予定はありません</p>';
+  }
+  showSheet(pickSheet);
+}
+
+// 選んだ予定に座標だけを書き込む
+async function assignLocation(pin, latlng) {
+  closeSheets(); stopPlacing();
+  const target = pins.find(p => p.id === pin.id) || pin;
+  const before = { lat: target.lat, lng: target.lng };
+  target.lat = latlng.lat; target.lng = latlng.lng;
+  refresh();
+  try {
+    await api({ action: "save", pin: payloadOf(target), newPhotos: [] });
+    toast(target.name + " の場所を決めました");
+  } catch (e) {
+    target.lat = before.lat; target.lng = before.lng;
+    refresh();
+    if (e.message !== "auth" && e.message !== "readonly") toast("保存できませんでした");
+  }
+}
+
+// 保存用の形に整える（写真は送り直さない）
+function payloadOf(p) {
+  return {
+    id: p.id, name: p.name, category: p.category, memo: p.memo,
+    lat: p.lat, lng: p.lng, day: p.day, time: p.time, endTime: p.endTime,
+    arriveTime: p.arriveTime, moveNote: p.moveNote, group: p.group,
+    price: p.price, paid: p.paid, photoIds: p.photoIds
+  };
+}
+
+document.getElementById("pickNewBtn").addEventListener("click", () => {
+  const ll = pickLatLng;
+  closeSheets();
+  openForm(null, ll);
+});
+document.getElementById("pickCancelBtn").addEventListener("click", () => {
+  closeSheets(); stopPlacing();
+});
 
 document.getElementById("editBtn").addEventListener("click", () => {
   if (currentPin) openForm(currentPin, null);
@@ -1580,8 +1769,8 @@ saveBtn.addEventListener("click", async () => {
     name: name,
     category: formCat,
     memo: document.getElementById("fMemo").value.trim(),
-    lat: formLatLng.lat,
-    lng: formLatLng.lng,
+    lat: formLatLng ? formLatLng.lat : null,
+    lng: formLatLng ? formLatLng.lng : null,
     day: formDay,
     time: t.time,
     endTime: t.endTime,
@@ -1626,13 +1815,7 @@ async function togglePaid(pin) {
   refresh();
   if (currentPin && currentPin.id === target.id) openDetail(target.id);
   try {
-    await api({ action: "save", pin: {
-      id: target.id, name: target.name, category: target.category, memo: target.memo,
-      lat: target.lat, lng: target.lng, day: target.day, time: target.time,
-      endTime: target.endTime, arriveTime: target.arriveTime,
-      moveNote: target.moveNote, group: target.group,
-      price: target.price, paid: target.paid, photoIds: target.photoIds
-    }, newPhotos: [] });
+    await api({ action: "save", pin: payloadOf(target), newPhotos: [] });
   } catch (e) {
     target.paid = before;
     refresh();
@@ -1713,7 +1896,7 @@ function openList() {
   viewToggle.classList.add("on");
   viewToggle.setAttribute("aria-label", "地図に切り替え");
   listPage.classList.add("show");
-  addBtn.style.display = "none";
+  addBtn.style.display = (role === "editor") ? "" : "none";
   document.getElementById("reloadBtn").style.display = "none";
   closeSheets(); stopPlacing();
   renderList();
