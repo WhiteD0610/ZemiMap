@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#F9F9F9" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1E1E20" media="(prefers-color-scheme: dark)">
-<title>旅行地図</title>
+<title>さんぽ地図</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 /* ===== iOS風トークン ===== */
@@ -181,7 +181,7 @@ svg.ic{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke
 /* タイムライン */
 .tl{padding:0 16px}
 .tl-row{display:flex;align-items:stretch;gap:10px}
-.tl-rail{flex:0 0 34px;display:flex;flex-direction:column;align-items:center}
+.tl-rail{flex:0 0 30px;display:flex;flex-direction:column;align-items:center}
 .tl-dot{
   width:13px;height:13px;border-radius:50%;margin-top:16px;flex:0 0 auto;
   border:2.5px solid var(--bg);box-shadow:0 0 0 1.5px currentColor;
@@ -216,35 +216,67 @@ svg.ic{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke
 .tl-move .how{display:flex;align-items:center;gap:4px}
 .tl-move .how .ic{width:13px;height:13px;stroke-width:2}
 .tl-gap{flex:1;padding:4px 2px}
-
-/* 班の分岐 */
-.branch{margin:2px 0 2px}
-.branch-note{
-  display:flex;align-items:center;gap:6px;
-  padding:6px 0 10px 44px;font-size:12.5px;font-weight:600;color:var(--label2);
+.tl-move.legs{display:block;padding:6px 2px 8px}
+.tl-move .leg{
+  font-size:13px;font-weight:600;color:var(--label);
+  font-variant-numeric:tabular-nums;line-height:1.5;
 }
-.branch-note .ic{width:15px;height:15px}
-.branch-cols{display:grid;gap:10px;padding:0 16px}
+.tl-move .leg .w{color:var(--label2);font-weight:500;margin-left:4px;font-size:12px}
+.tl-move .legmid{display:flex;align-items:center;gap:6px;padding:2px 0}
+.tl-move .legmid .ic{width:15px;height:15px;color:var(--label3);stroke-width:2.2}
+.tl-move .legmid .how{
+  font-size:12px;font-weight:600;color:var(--label2);
+  background:var(--fill);border-radius:9px;padding:1px 8px;
+}
+
+/* 班の分岐（枝の描画） */
+.branch-wrap{position:relative}
+.fork,.merge{position:relative;height:26px;color:var(--label3)}
+.fork .stub,.merge .stub{
+  position:absolute;left:14px;width:2px;background:currentColor;opacity:.5;border-radius:1px;
+}
+.fork .stub{top:0;height:13px}
+.merge .stub{bottom:0;height:13px}
+.fork .bar,.merge .bar{
+  position:absolute;height:2px;background:currentColor;opacity:.5;border-radius:1px;
+  left:14px;right:calc((100% - (var(--n) - 1) * 10px) / var(--n) - 14px);
+}
+.fork .bar{top:12px}
+.merge .bar{bottom:12px}
+.fork .drops,.merge .drops{
+  position:absolute;left:0;right:0;display:grid;gap:10px;
+  grid-template-columns:repeat(var(--n),1fr);
+}
+.fork .drops{top:13px;height:13px}
+.merge .drops{bottom:13px;height:13px}
+.drops .d{position:relative}
+.drops .d::before{
+  content:"";position:absolute;left:14px;top:0;bottom:0;width:2px;
+  background:currentColor;opacity:.5;border-radius:1px;
+}
+.branch-label{
+  display:flex;align-items:center;gap:6px;padding:2px 0 4px 40px;
+  font-size:12px;font-weight:600;color:var(--label2);
+}
+.branch-label .ic{width:14px;height:14px}
+.branch-cols{display:grid;gap:10px;align-items:stretch}
 .branch-cols.scroll{
-  grid-auto-flow:column;grid-auto-columns:minmax(215px,1fr);
-  overflow-x:auto;scroll-snap-type:x proximity;
-  padding-bottom:4px;scrollbar-width:none;
+  grid-auto-flow:column;grid-auto-columns:minmax(210px,1fr);
+  overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:4px;scrollbar-width:none;
 }
 .branch-cols.scroll::-webkit-scrollbar{display:none}
 .branch-cols.scroll > .col{scroll-snap-align:start}
-.col{min-width:0}
-.col-hd{
-  display:flex;align-items:center;gap:6px;padding:0 2px 7px;
-  font-size:13px;font-weight:700;letter-spacing:-.01em;
-}
-.col-hd .swatch{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
-.col-hd .n{color:var(--label3);font-weight:500;font-size:12px}
-.col .tl{padding:0}
-.col .tl-rail{flex:0 0 24px}
-.col .tl-dot{width:11px;height:11px;margin-top:14px}
+.col{min-width:0;display:flex;flex-direction:column}
+.col .tl{flex:1;display:flex;flex-direction:column;padding:0}
 .col .card{padding:9px 11px}
 .col .card-name{font-size:15px}
 .col .card-thumb{flex:0 0 40px;width:40px;height:40px}
+.grouptag{
+  display:inline-flex;align-items:center;gap:5px;border-radius:13px;
+  padding:3px 10px;font-size:12px;font-weight:700;color:#fff;align-self:flex-start;
+}
+.tl-row.tail{flex:1;min-height:14px}
+.tl-row.tail .tl-line{opacity:.5}
 
 /* 料金 */
 .card-price{display:flex;align-items:center;gap:8px;margin-top:7px;flex-wrap:wrap}
@@ -404,7 +436,7 @@ svg.ic{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke
 
 <div class="nav" id="nav">
   <div class="nav-top">
-    <div class="nav-title">旅行地図</div>
+    <div class="nav-title">さんぽ地図</div>
     <button class="role-pill" id="rolePill" type="button"></button>
     <button class="nav-btn" id="searchToggle" type="button" aria-label="場所を検索"></button>
     <button class="nav-btn" id="viewToggle" type="button" aria-label="リストと地図を切り替え"></button>
@@ -455,14 +487,14 @@ svg.ic{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke
   <div class="sheet-inner">
     <h2 id="formTitle">場所を追加</h2>
 
+    <div class="grouplabel">分類</div>
     <div class="group">
       <div class="grow stack">
-        <span class="k">名前</span>
-        <input type="text" id="fName" placeholder="例: 赤福本店">
+        <div class="chips show" id="catSeg" style="margin-top:0"></div>
       </div>
       <div class="grow stack">
-        <span class="k">種類</span>
-        <div class="seg" id="catSeg"></div>
+        <span class="k" id="nameLabel">名称</span>
+        <input type="text" id="fName" placeholder="例: 鳥羽駅">
       </div>
     </div>
 
@@ -477,19 +509,8 @@ svg.ic{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke
         <input type="text" id="fGroup" list="groupList" placeholder="全員（空欄）">
         <datalist id="groupList"></datalist>
       </div>
-      <div class="grow" id="rowArrive">
-        <span class="k">到着</span>
-        <input type="time" id="fTime">
-      </div>
-      <div class="grow" id="rowLeave">
-        <span class="k">出発</span>
-        <input type="time" id="fEnd">
-      </div>
-      <div class="grow" id="rowMove">
-        <span class="k">ここへの移動</span>
-        <input type="text" id="fMove" placeholder="徒歩・近鉄・車 など">
-      </div>
     </div>
+    <div class="group" id="timeRows"></div>
 
     <div class="grouplabel">詳細</div>
     <div class="group">
@@ -533,10 +554,28 @@ svg.ic{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke
 <script>
 /* ===================== 設定 ===================== */
 // GASをウェブアプリとしてデプロイして得た /exec URL に書き換える
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyPUfaGSUc5gaih5HYlyZQz2cTkM9zO4PvF6XdhQikL9Fz7FVqMzkn-smgOMgTD1oer/exec";
+const GAS_URL = "ここにGASのURLを貼る";
 
 const DAY_COUNT = 3;
-const CATEGORIES = { "観光": "orange", "グルメ": "red", "宿": "indigo", "その他": "gray" };
+// 分類ごとに、入力する時刻の欄と表示のしかたを決める
+const TYPES = {
+  "集合":   { token: "tint",   place: "集合場所",  times: [["time", "集合"]] },
+  "移動":   { token: "teal",   place: "駅・のりば", move: true,
+              times: [["time", "集合"], ["endTime", "出発"], ["arriveTime", "到着"]] },
+  "観光":   { token: "orange", place: "名称",      times: [["time", "到着"], ["endTime", "出発"]] },
+  "食事":   { token: "red",    place: "店名",      times: [["time", "入店"], ["endTime", "退店"]] },
+  "宿":     { token: "indigo", place: "宿名",
+              times: [["time", "チェックイン"], ["endTime", "チェックアウト"]] },
+  "自由行動": { token: "purple", place: "エリア",  times: [["time", "開始"], ["endTime", "終了"]] },
+  "その他": { token: "gray",   place: "名称",      times: [["time", "到着"], ["endTime", "出発"]] }
+};
+const TYPE_ALIAS = { "グルメ": "食事" }; // 旧バージョンの分類名を読み替える
+function typeOf(pin) {
+  const raw = String(pin.category || "");
+  const name = TYPE_ALIAS[raw] || raw;
+  return TYPES[name] ? name : "その他";
+}
+function typeColor(pin) { return cssVar(TYPES[typeOf(pin)].token); }
 // 班に順番に割り当てる色（全員共通の予定は tint）
 const GROUP_TOKENS = ["green", "purple", "teal", "pink", "orange", "red", "indigo"];
 const DEFAULT_BOUNDS = [[34.42, 136.69], [34.50, 136.90]];
@@ -556,7 +595,8 @@ const ICON = {
   split:   '<path d="M12 20V12"/><path d="M12 12L6 5M12 12l6-7"/><circle cx="12" cy="20" r="1.6"/>',
   merge:   '<path d="M12 4v8"/><path d="M12 12l-6 7M12 12l6 7"/><circle cx="12" cy="4" r="1.6"/>',
   walk:    '<circle cx="13" cy="4.5" r="1.8"/><path d="M11 21l2-6-3-3 1-4 3 3 3 1"/><path d="M10 12l-2 9"/>',
-  yen:     '<path d="M7 5l5 7 5-7"/><path d="M12 12v7M8 14h8M8 17h8"/>'
+  yen:     '<path d="M7 5l5 7 5-7"/><path d="M12 12v7M8 14h8M8 17h8"/>',
+  down:    '<path d="M12 4v15"/><path d="M6 13.5l6 6 6-6"/>'
 };
 function icon(name, cls) {
   return '<svg class="ic ' + (cls || "") + '" viewBox="0 0 24 24">' + ICON[name] + "</svg>";
@@ -573,6 +613,7 @@ let placing = false, tempMarker = null;
 let editing = null, formLatLng = null;
 let keepPhotoIds = [], newPhotos = [];
 let formCat = "観光", formDay = 0;
+let formTimes = {}, formMove = "";
 let viewDay = 0;          // 0 = すべて
 let viewGroup = null;     // null = 全班
 let listOpen = false;
@@ -756,7 +797,7 @@ function renderMap() {
 
   if (viewDay === 0) {
     // 全日程: 種類ごとの色。順番の線は引かない
-    pins.forEach(p => addMarker(p, cssVar(CATEGORIES[p.category] || "gray"), null));
+    pins.forEach(p => addMarker(p, typeColor(p), null));
     return;
   }
 
@@ -843,6 +884,9 @@ function daySection(d, thumbs) {
   const list = viewGroup ? trackOf(d, viewGroup) : dayPins(d);
   sec.appendChild(dayHeader(d + "日目", list.length));
 
+  const body = document.createElement("div");
+  body.className = "tl";           // 幹の左端をここで決める
+
   if (!list.length) {
     const p = document.createElement("p");
     p.className = "empty";
@@ -852,18 +896,22 @@ function daySection(d, thumbs) {
   }
 
   if (viewGroup) {
-    // 1つの班にしぼった表示 = 1本のタイムライン
-    sec.appendChild(timeline(list, groupColor(viewGroup), thumbs, false));
+    // 1つの班にしぼった表示は枝分かれなしの一本道
+    body.appendChild(timeline(list, groupColor(viewGroup), thumbs, false));
   } else {
-    // 全員共通と班分かれを、時系列のかたまりに分けて並べる
-    blocksOf(list).forEach(block => {
+    const blocks = blocksOf(list);
+    blocks.forEach((block, i) => {
       if (block.type === "common") {
-        sec.appendChild(timeline(block.items, cssVar("tint"), thumbs, false));
+        body.appendChild(timeline(block.items, cssVar("tint"), thumbs, false));
       } else {
-        sec.appendChild(branchBlock(block, thumbs));
+        // 前後に全員行動があるかで、枝の分かれ方・戻り方を変える
+        const splitsFrom = i > 0;
+        const mergesInto = i < blocks.length - 1;
+        body.appendChild(branchBlock(block, thumbs, splitsFrom, mergesInto));
       }
     });
   }
+  sec.appendChild(body);
 
   const total = totalsOf(list);
   if (total) sec.appendChild(total);
@@ -874,7 +922,10 @@ function plainSection(title, list, thumbs) {
   const sec = document.createElement("section");
   sec.className = "day-sec";
   sec.appendChild(dayHeader(title, list.length));
-  sec.appendChild(timeline(list, cssVar("gray"), thumbs, false));
+  const body = document.createElement("div");
+  body.className = "tl";
+  body.appendChild(timeline(list, cssVar("gray"), thumbs, false));
+  sec.appendChild(body);
   return sec;
 }
 
@@ -885,12 +936,12 @@ function dayHeader(title, n) {
   h.textContent = title;
   const c = document.createElement("span");
   c.className = "count";
-  c.textContent = n ? n + "か所" : "";
+  c.textContent = n ? n + "件" : "";
   hd.appendChild(h); hd.appendChild(c);
   return hd;
 }
 
-// 時系列を「全員共通」と「班分かれ」のかたまりに切り分ける
+// 時系列を「全員」と「班分かれ」のかたまりに切り分ける
 function blocksOf(list) {
   const blocks = [];
   list.forEach(p => {
@@ -902,58 +953,96 @@ function blocksOf(list) {
   return blocks;
 }
 
-function branchBlock(block, thumbs) {
+/* 幹から枝が分かれ、また幹に戻るまでを描く */
+function branchBlock(block, thumbs, splitsFrom, mergesInto) {
   const wrap = document.createElement("div");
-  wrap.className = "branch";
+  wrap.className = "branch-wrap";
 
-  const note = document.createElement("div");
-  note.className = "branch-note";
-  note.innerHTML = icon("split") + "<span>ここから班ごとに分かれます</span>";
-  wrap.appendChild(note);
-
-  // 班ごとの列に振り分け（登場順）
+  // 班ごとの列に振り分け（登場が早い班から左に並ぶ）
   const order = [];
   const byGroup = {};
   block.items.forEach(p => {
     if (!byGroup[p.group]) { byGroup[p.group] = []; order.push(p.group); }
     byGroup[p.group].push(p);
   });
+  const n = order.length;
+
+  if (splitsFrom) {
+    wrap.appendChild(joint("fork", n));
+    wrap.appendChild(noteRow("split", "ここから班ごとに分かれます"));
+  }
 
   const cols = document.createElement("div");
-  cols.className = "branch-cols" + (order.length > 2 ? " scroll" : "");
-  cols.style.gridTemplateColumns = order.length <= 2 ? "repeat(" + order.length + ",1fr)" : "";
+  cols.className = "branch-cols" + (n > 2 ? " scroll" : "");
+  cols.style.setProperty("--n", n);
+  if (n > 2) cols.style.gridTemplateColumns = "";
 
   order.forEach(g => {
     const col = document.createElement("div");
     col.className = "col";
-    const color = groupColor(g);
-    const hd = document.createElement("div");
-    hd.className = "col-hd";
-    hd.innerHTML = '<span class="swatch" style="background:' + color + '"></span>' +
-      "<span>" + escapeHtml(g) + '</span><span class="n">' + byGroup[g].length + "</span>";
-    col.appendChild(hd);
-    col.appendChild(timeline(byGroup[g], color, thumbs, true));
+    col.appendChild(timeline(byGroup[g], groupColor(g), thumbs, true, g));
     cols.appendChild(col);
   });
   wrap.appendChild(cols);
 
-  const merge = document.createElement("div");
-  merge.className = "branch-note";
-  merge.innerHTML = icon("merge") + "<span>このあと合流します</span>";
-  wrap.appendChild(merge);
+  if (mergesInto) {
+    wrap.appendChild(noteRow("merge", "このあと合流します"));
+    wrap.appendChild(joint("merge", n));
+  }
   return wrap;
 }
 
-// タイムライン本体。予定と予定のあいだに移動区間の行を挟む
-function timeline(list, color, thumbs, compact) {
+// 幹と枝をつなぐ継ぎ目（縦棒＋横棒＋各列への枝）
+function joint(kind, n) {
+  const el = document.createElement("div");
+  el.className = kind;
+  el.style.setProperty("--n", n);
+  const drops = Array.from({ length: n }, () => '<span class="d"></span>').join("");
+  el.innerHTML = '<span class="stub"></span><span class="bar"></span>' +
+    '<span class="drops">' + drops + "</span>";
+  return el;
+}
+
+function noteRow(kind, text) {
+  const el = document.createElement("div");
+  el.className = "branch-label";
+  el.innerHTML = icon(kind) + "<span>" + escapeHtml(text) + "</span>";
+  return el;
+}
+
+/* タイムライン本体。予定と予定のあいだに移動の行を挟む */
+function timeline(list, color, thumbs, compact, groupName) {
   const tl = document.createElement("div");
   tl.className = "tl";
   tl.style.color = color;
+
+  if (groupName) {
+    const hd = document.createElement("div");
+    hd.className = "tl-row";
+    hd.innerHTML = '<div class="tl-rail"><span class="tl-line"></span></div>';
+    const tagEl = document.createElement("span");
+    tagEl.className = "grouptag";
+    tagEl.style.background = color;
+    tagEl.textContent = groupName;
+    const box = document.createElement("div");
+    box.style.padding = "2px 0 6px";
+    box.appendChild(tagEl);
+    hd.appendChild(box);
+    tl.appendChild(hd);
+  }
 
   list.forEach((pin, i) => {
     tl.appendChild(itemRow(pin, color, thumbs, compact));
     if (i < list.length - 1) tl.appendChild(moveRow(pin, list[i + 1]));
   });
+
+  // 列の高さがそろわないと合流の枝がずれるので、余白ぶんの線を足す
+  if (groupName) {
+    const tail = document.createElement("div");
+    tail.className = "tl-row tail";
+    tail.innerHTML = '<div class="tl-rail"><span class="tl-line"></span></div>';
+    tl.appendChild(tail);
+  }
   return tl;
 }
 
@@ -963,7 +1052,8 @@ function itemRow(pin, color, thumbs, compact) {
 
   const rail = document.createElement("div");
   rail.className = "tl-rail";
-  rail.innerHTML = '<span class="tl-dot" style="background:' + color + ';color:' + color + '"></span>';
+  rail.innerHTML = '<span class="tl-dot" style="background:' + color + ';color:' + color + '"></span>' +
+    '<span class="tl-line"></span>';
 
   const card = document.createElement("button");
   card.type = "button";
@@ -972,18 +1062,22 @@ function itemRow(pin, color, thumbs, compact) {
   const main = document.createElement("div");
   main.className = "card-main";
 
-  const t = document.createElement("div");
-  t.className = "card-time";
-  if (pin.time || pin.endTime) {
-    t.innerHTML = escapeHtml(pin.time || "—") +
-      (pin.endTime ? ' <span class="end">→ ' + escapeHtml(pin.endTime) + "</span>" : "");
-  } else {
-    t.textContent = "時刻未定";
+  // 分類が決めた「その予定を代表する時刻」をカードに出す
+  const def = TYPES[typeOf(pin)];
+  const head = document.createElement("div");
+  head.className = "card-time";
+  const headBits = [];
+  const first = def.times[0];
+  if (pin[first[0]]) headBits.push(escapeHtml(first[1]) + " " + escapeHtml(pin[first[0]]));
+  if (!def.move && pin.endTime && def.times.length > 1) {
+    headBits.push('<span class="end">→ ' + escapeHtml(pin.endTime) + "</span>");
   }
+  head.innerHTML = headBits.length ? headBits.join(" ") : "時刻未定";
+
   const nm = document.createElement("div");
   nm.className = "card-name";
   nm.textContent = pin.name;
-  main.appendChild(t); main.appendChild(nm);
+  main.appendChild(head); main.appendChild(nm);
 
   if (pin.memo && !compact) {
     const m = document.createElement("div");
@@ -1002,17 +1096,14 @@ function itemRow(pin, color, thumbs, compact) {
     thumbs.push(img);
     card.appendChild(img);
   }
-  card.onclick = () => {
-    closeList();
-    if (pin.day) setDay(pin.day);
-    openDetail(pin.id);
-  };
+  card.onclick = () => { openDetail(pin.id); };
 
   row.appendChild(rail); row.appendChild(card);
   return row;
 }
 
-// 縦線の横に「12:30 → 13:00・30分・徒歩」を出す
+/* 縦線の横に移動を表記する。
+   「移動」の分類なら 出発 ⇓ 到着 を縦に並べ、それ以外は空き時間を控えめに出す */
 function moveRow(a, b) {
   const row = document.createElement("div");
   row.className = "tl-row";
@@ -1021,27 +1112,41 @@ function moveRow(a, b) {
   rail.innerHTML = '<span class="tl-line"></span>';
   row.appendChild(rail);
 
-  // 前の予定に「出発」が入っているときだけ移動時間を出す。
-  // 到着時刻しか無い場合、そこから次の到着までは滞在時間を含んでしまうため
+  const box = document.createElement("div");
+  const aIsMove = TYPES[typeOf(a)].move;
+
+  if (aIsMove && (a.endTime || a.arriveTime)) {
+    // 出発 ⇓ 到着
+    box.className = "tl-move legs";
+    const dep = a.endTime, arr = a.arriveTime;
+    const dur = (toMin(dep) !== null && toMin(arr) !== null && toMin(arr) >= toMin(dep))
+      ? fmtDur(toMin(arr) - toMin(dep)) : null;
+    const mid = [];
+    if (a.moveNote) mid.push('<span class="how">' + escapeHtml(a.moveNote) + "</span>");
+    if (dur) mid.push('<span class="how">' + dur + "</span>");
+    box.innerHTML =
+      (dep ? '<div class="leg">' + escapeHtml(dep) + '<span class="w">出発</span></div>' : "") +
+      '<div class="legmid">' + icon("down") + mid.join("") + "</div>" +
+      (arr ? '<div class="leg">' + escapeHtml(arr) + '<span class="w">到着</span></div>' : "");
+    row.appendChild(box);
+    return row;
+  }
+
+  // 前の予定に終了時刻があるときだけ空き時間を出す
+  // （到着時刻しか無いと滞在時間まで含んでしまうため）
   const f = toMin(a.endTime), t = toMin(b.time);
   const bits = [];
   if (f !== null && t !== null && t >= f) {
     bits.push('<span class="span">' + escapeHtml(a.endTime) + " → " + escapeHtml(b.time) + "</span>");
     bits.push('<span class="dur">' + fmtDur(t - f) + "</span>");
-  } else if (t !== null && toMin(a.time) !== null) {
-    // 出発時刻が未入力。空き時間だけ控えめに示す
-    bits.push('<span class="span">' + escapeHtml(b.time) + " まで</span>");
   }
-  if (b.moveNote) {
-    bits.push('<span class="how">' + icon("walk") + escapeHtml(b.moveNote) + "</span>");
-  }
+  if (b.moveNote) bits.push('<span class="how">' + icon("walk") + escapeHtml(b.moveNote) + "</span>");
 
-  const box = document.createElement("div");
   if (bits.length) {
     box.className = "tl-move";
     box.innerHTML = bits.join("");
   } else {
-    box.className = "tl-gap"; // 情報が無いときは線だけ
+    box.className = "tl-gap";
   }
   row.appendChild(box);
   return row;
@@ -1109,7 +1214,7 @@ function openDetail(id) {
 
   const tags = document.getElementById("detailTags");
   tags.innerHTML = "";
-  tags.appendChild(tag(pin.category || "その他", cssVar(CATEGORIES[pin.category] || "gray")));
+  tags.appendChild(tag(typeOf(pin), typeColor(pin)));
   if (pin.day) tags.appendChild(tag(pin.day + "日目", cssVar("tint")));
   if (pin.group) tags.appendChild(tag(pin.group, groupColor(pin.group)));
 
@@ -1251,27 +1356,32 @@ function openForm(pin, latlng) {
   formLatLng = pin ? { lat: pin.lat, lng: pin.lng } : latlng;
   keepPhotoIds = pin ? pin.photoIds.slice() : [];
   newPhotos = [];
-  formCat = pin ? (pin.category || "その他") : "観光";
+  formCat = pin ? typeOf(pin) : "観光";
   formDay = pin ? (pin.day || 0) : viewDay;
 
-  document.getElementById("formTitle").textContent = pin ? "場所を編集" : "場所を追加";
+  formTimes = {
+    time: pin ? (pin.time || "") : "",
+    endTime: pin ? (pin.endTime || "") : "",
+    arriveTime: pin ? (pin.arriveTime || "") : ""
+  };
+  formMove = pin ? (pin.moveNote || "") : "";
+
+  document.getElementById("formTitle").textContent = pin ? "予定を編集" : "予定を追加";
   document.getElementById("fName").value = pin ? pin.name : "";
   document.getElementById("fMemo").value = pin ? pin.memo : "";
-  document.getElementById("fTime").value = pin ? (pin.time || "") : "";
-  document.getElementById("fEnd").value = pin ? (pin.endTime || "") : "";
-  document.getElementById("fMove").value = pin ? (pin.moveNote || "") : "";
   document.getElementById("fGroup").value = pin ? (pin.group || "") : (viewGroup || "");
   document.getElementById("fPrice").value =
     (pin && pin.price != null && pin.price !== "") ? pin.price : "";
 
   buildGroupList();
   buildCatSeg();
+  updatePlaceLabel();
   buildDaySegForm();
   renderPhotoEdit();
 
   if (tempMarker) map.removeLayer(tempMarker);
   tempMarker = L.marker([formLatLng.lat, formLatLng.lng], {
-    icon: pinIcon(cssVar(CATEGORIES[formCat] || "gray"))
+    icon: pinIcon(cssVar(TYPES[formCat].token))
   }).addTo(map);
 
   showSheet(formSheet);
@@ -1285,20 +1395,63 @@ document.getElementById("cancelBtn").addEventListener("click", () => {
 });
 
 function buildCatSeg() {
-  const seg = document.getElementById("catSeg");
-  seg.innerHTML = "";
-  Object.keys(CATEGORIES).forEach(cat => {
+  const box = document.getElementById("catSeg");
+  box.innerHTML = "";
+  Object.keys(TYPES).forEach(cat => {
+    const color = cssVar(TYPES[cat].token);
     const b = document.createElement("button");
     b.type = "button";
+    b.className = "chip" + (cat === formCat ? " on" : "");
     b.textContent = cat;
-    b.className = cat === formCat ? "on" : "";
+    if (cat === formCat) b.style.background = color;
     b.onclick = () => {
       formCat = cat;
       buildCatSeg();
-      if (tempMarker) tempMarker.setIcon(pinIcon(cssVar(CATEGORIES[cat] || "gray")));
+      buildTimeRows();
+      updatePlaceLabel();
+      if (tempMarker) tempMarker.setIcon(pinIcon(cssVar(TYPES[cat].token)));
     };
-    seg.appendChild(b);
+    box.appendChild(b);
   });
+}
+
+// 分類に応じて時刻の入力欄を組み替える
+function buildTimeRows() {
+  const box = document.getElementById("timeRows");
+  box.innerHTML = "";
+  if (formDay <= 0) return;
+  const def = TYPES[formCat];
+  def.times.forEach(([field, label]) => {
+    const row = document.createElement("div");
+    row.className = "grow";
+    const k = document.createElement("span");
+    k.className = "k";
+    k.textContent = label;
+    const input = document.createElement("input");
+    input.type = "time";
+    input.id = "f_" + field;
+    input.value = formTimes[field] || "";
+    input.oninput = () => { formTimes[field] = input.value; };
+    row.appendChild(k); row.appendChild(input);
+    box.appendChild(row);
+  });
+  // 移動の分類だけ「手段」を出す
+  if (def.move) {
+    const row = document.createElement("div");
+    row.className = "grow";
+    row.innerHTML = '<span class="k">手段</span>';
+    const input = document.createElement("input");
+    input.type = "text";
+    input.id = "f_moveNote";
+    input.placeholder = "近鉄・バス・徒歩 など";
+    input.value = formMove;
+    input.oninput = () => { formMove = input.value; };
+    row.appendChild(input);
+    box.appendChild(row);
+  }
+}
+function updatePlaceLabel() {
+  document.getElementById("nameLabel").textContent = TYPES[formCat].place;
 }
 
 function buildDaySegForm() {
@@ -1316,12 +1469,10 @@ function buildDaySegForm() {
   });
   updateDayRows();
 }
-// 日程が未定のうちは時刻や班の欄を隠す
+// 日程が未定のうちは班と時刻の欄を隠す
 function updateDayRows() {
-  const show = formDay > 0 ? "" : "none";
-  ["rowGroup", "rowArrive", "rowLeave", "rowMove"].forEach(id => {
-    document.getElementById(id).style.display = show;
-  });
+  document.getElementById("rowGroup").style.display = formDay > 0 ? "" : "none";
+  buildTimeRows();
 }
 
 function buildGroupList() {
@@ -1404,11 +1555,19 @@ saveBtn.addEventListener("click", async () => {
   const name = document.getElementById("fName").value.trim();
   if (!name) { toast("名前を入力してください"); return; }
 
-  const time = formDay > 0 ? document.getElementById("fTime").value : "";
-  const endTime = formDay > 0 ? document.getElementById("fEnd").value : "";
-  if (time && endTime && toMin(endTime) < toMin(time)) {
-    toast("出発が到着より前になっています");
-    return;
+  // 分類が使う時刻だけを保存する（分類を変えたときに古い値が残らないように）
+  const used = TYPES[formCat].times.map(t => t[0]);
+  const t = { time: "", endTime: "", arriveTime: "" };
+  if (formDay > 0) used.forEach(f => { t[f] = formTimes[f] || ""; });
+
+  // 前後関係の確認（分類ごとの並び順で見る）
+  const seq = used.map(f => t[f]).filter(Boolean).map(toMin);
+  for (let i = 0; i < seq.length - 1; i++) {
+    if (seq[i + 1] < seq[i]) {
+      const labels = TYPES[formCat].times.map(x => x[1]);
+      toast(labels[i + 1] + "が" + labels[i] + "より前になっています");
+      return;
+    }
   }
   const priceRaw = document.getElementById("fPrice").value.trim();
   const price = priceRaw === "" ? null : Math.max(0, Math.floor(Number(priceRaw) || 0));
@@ -1424,9 +1583,10 @@ saveBtn.addEventListener("click", async () => {
     lat: formLatLng.lat,
     lng: formLatLng.lng,
     day: formDay,
-    time: time,
-    endTime: endTime,
-    moveNote: formDay > 0 ? document.getElementById("fMove").value.trim() : "",
+    time: t.time,
+    endTime: t.endTime,
+    arriveTime: t.arriveTime,
+    moveNote: (formDay > 0 && TYPES[formCat].move) ? formMove.trim() : "",
     group: formDay > 0 ? document.getElementById("fGroup").value.trim() : "",
     price: price,
     paid: (price != null && editing) ? !!editing.paid : false,
@@ -1469,7 +1629,8 @@ async function togglePaid(pin) {
     await api({ action: "save", pin: {
       id: target.id, name: target.name, category: target.category, memo: target.memo,
       lat: target.lat, lng: target.lng, day: target.day, time: target.time,
-      endTime: target.endTime, moveNote: target.moveNote, group: target.group,
+      endTime: target.endTime, arriveTime: target.arriveTime,
+      moveNote: target.moveNote, group: target.group,
       price: target.price, paid: target.paid, photoIds: target.photoIds
     }, newPhotos: [] });
   } catch (e) {
@@ -1650,6 +1811,7 @@ setIcon(document.getElementById("gateMark"), "pin");
 buildDaySeg();
 applyRole();
 layout();
+openList(); // リストを主役にする
 
 if (GAS_URL.indexOf("https://") !== 0) {
   toast("index.html の GAS_URL を設定してください");
